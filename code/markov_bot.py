@@ -6,10 +6,11 @@ def get_word_list(input_text):
     cur_word = ""
 
     for char in input_text.strip():
-        if char in " \n\t" and len(cur_word) > 0: # get rid of whitespace
-            word_list.append(cur_word)
+        if char in " \n\t": # get rid of whitespace
+            if len(cur_word) > 0:
+                word_list.append(cur_word)
             cur_word = ""
-        elif char in ",!?.": # treat punctuation as a token
+        elif char in ",;!?.": # treat punctuation as a token
             if len(cur_word) > 0:
                 word_list.append(cur_word)
 
@@ -21,7 +22,7 @@ def get_word_list(input_text):
     return word_list
 
 def main():
-    filepath = "data/declaration_of_independence.txt"
+    filepath = "data/shakespeare_sonnets.txt"
     memory_size = 2
 
     with open(filepath, "r") as file:
@@ -48,10 +49,30 @@ def main():
                 freq_dict[key][inner_key] /= total_count
 
         ### Get start of sentence ###
+        sent = "From fairest"
+        cur_memory = tuple(sent.split())
 
         ### Generate sentence ###
+        num_iters = 0
+        while cur_memory[-1] not in ("!?."): # stop after reaching a natural sentence ending
+            transitions = freq_dict[cur_memory]
+            available_states = list(transitions.keys())
+            transition_probs = [transitions[s] for s in available_states]
 
-        print(freq_dict)
+            next_word = np.random.choice(available_states, p = transition_probs) # randomly choose next state
+
+            if next_word not in ",;!?.":
+                sent += " "
+            sent += next_word
+
+            cur_memory = tuple((list(cur_memory) + [next_word])[1:]) # update value of current state
+
+            if num_iters >= 300: # Failsafe
+                break
+            num_iters += 1
+
+        print(sent)
+        #print(freq_dict)
 
 if __name__ == "__main__":
     main()
